@@ -1,19 +1,27 @@
-# default.nix
-# A minimal Hydra jobset definition.
-
-# Import nixpkgs. Hydra needs to know which version of nixpkgs to use.
-# This is configured in the Hydra jobset settings itself.
-let
-  pkgs = import <nixpkgs> {
-    # No specific system or overlays needed for this simple example
-  };
-in
-
-# The result must be an attribute set.
-# Each key in the set becomes a job name in Hydra.
-# Each value must be a Nix derivation that Hydra can build.
 {
-  # Job name: "hello"
-  # Derivation: The standard GNU Hello package from nixpkgs.
-  hello = pkgs.hello;
+  description = "Your flake description";
+
+  # Optional but standard
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; # Example input
+    # other inputs...
+  };
+
+  # The 'outputs' attribute's value IS a function
+  outputs = { self, nixpkgs, ... }@inputs:
+    # The value RETURNED by the outputs function MUST be an attribute set
+    let
+      system = "x86_64-linux"; # Or derive from inputs
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+    {
+      # Your actual outputs go here (packages, apps, checks, hydraJobs, etc.)
+      packages.${system}.default = pkgs.hello;
+
+      # If defining Hydra jobs within the flake:
+      hydraJobs.${system} = {
+         hello = pkgs.hello;
+         # other jobs...
+      };
+    }; # End of the outputs attrset
 }
